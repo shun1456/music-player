@@ -6,48 +6,46 @@ import time
 from just_playback import Playback
 
 player = Playback()
-music_list_initial = []
-music_list = []
-title = ''
-author = ''
-slash = r"\ "
-slash = slash.removesuffix(' ')
-song = {}
-current_song = ''
-
-for filename in os.listdir(r'C:\Users\shun\Music\song storage'):
-    music_list_initial.append(filename.removesuffix('.mp3'))
-
-for i in range(len(music_list_initial)):
-    file_path = r'C:\Users\shun\Music\song storage' + slash + music_list_initial[i] + '.mp3'
-    audio = MP3(file_path, ID3=EasyID3)
-    author = audio.get('artist', ['неизвестно'])[0]
-    title = audio.get('title', ["неизвестно"])[0]
-    duration_in_seconds = audio.info.length
-    duration_in_seconds = int(duration_in_seconds)
-    if duration_in_seconds % 60 < 10:
-        duration = str(duration_in_seconds // 60) + ':' + '0' + str(duration_in_seconds % 60)
-    else:
-        duration = str(duration_in_seconds // 60) + ':' + str(duration_in_seconds % 60)
-    song = {'title': title.removesuffix(' (Sefon.Pro)'), 'author': author, 'duration': duration, 'filepath': file_path}
-    music_list.append(song)
-current_music_list = music_list
-
-#print(music_list)
 
 
-def sort_by_one(object, music_list):
-    return_list = []
-    authors = []
+def make_song_folder():
+    song_filepath = os.path.join(os.path.expanduser("~"), "song_filepath")
+    with open(song_filepath, "w", encoding="utf-8") as file:
+        if file == '':
+            filepath = 'ghj'  # функция записи пути к папке
+            os.makedirs(filepath, exist_ok=True)
+            with open(song_filepath, "w", encoding="utf-8") as file:
+                file.write(filepath)
+
+
+def get_all_songs_metadata():
+    music_list = []
+    music_list_initial = []
+    song_filepath = os.path.join(os.path.expanduser("~"), "song_filepath")
+    for filename in os.listdir(song_filepath):
+        music_list_initial.append(filename)
+    for i in range(len(music_list_initial)):
+        filepath = song_filepath
+        audio = MP3(filepath, ID3=EasyID3)
+        author = audio.get('artist', ['неизвестно'])[0]
+        title = audio.get('title', ["неизвестно"])[0]
+        duration_in_seconds = audio.info.length
+        duration_in_seconds = int(duration_in_seconds)
+        song = {'title': title.removesuffix(' (Sefon.Pro)'), 'author': author, 'duration': duration_in_seconds,
+                'filepath': filepath}
+        music_list.append(song)
+        return music_list
+
+
+def search(object, music_list):
+    sorted_list = []
     for i in music_list:
-        if i['title'] == object:
-            return_list.append(i)
+        if object in i['title']:
+            sorted_list.append(i)
             break
         elif object in i['author']:
-            return_list.append(i)
-    global current_music_list
-    current_music_list = return_list
-    return return_list
+            sorted_list.append(i)
+    return sorted_list
 
 
 def sort_list_by_alph(object, music_list):
@@ -65,18 +63,15 @@ def sort_list_by_alph(object, music_list):
             sorted_list.append(i)
         elif i['title'] in list_a:
             sorted_list.append(i)
-    global current_music_list
-    current_music_list = sorted_list
     return sorted_list
 
 
-def play(current_music_list):
-    global current_song
-    for i in current_music_list:
+def play(song):
+    for i in music_list:
         player.load_file(i['filepath'])
         player.play()
         current_song = i['filepath']
-        while player.playing():
+        if player.playing():
             time.sleep(1)
     current_song = ''
 
